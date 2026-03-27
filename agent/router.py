@@ -34,6 +34,7 @@ Available Tools:
 1. "calculator": Use this for mathematical calculations.
 2. "summarizer": Use this for summarizing given text or articles.
 3. "search": Use this for searching the web for latest information, news, or world knowledge not covered by rag_search.
+4. "trip_planner": Use this for queries related to planning trips, travel, budget, duration or destination.
 
 Output your reply as a strictly valid JSON object with the following structure:
 {{
@@ -42,10 +43,11 @@ Output your reply as a strictly valid JSON object with the following structure:
 }}
 
 Rules:
-- If a tool is needed, "tool" should be exactly one of: "calculator", "summarizer", "search".
+- If a tool is needed, "tool" should be exactly one of: "calculator", "summarizer", "search", "trip_planner".
 - If no tool is appropriate, set "tool" to null and "payload" to null.
 - For "calculator" and "summarizer", the "payload" should be the specific part of the user input that needs processing.
 - For "search", the "payload" should be the query string to search for.
+- For "trip_planner", the "payload" should be the full user input.
 - Return ONLY the raw JSON object. Do not include markdown formatting, backticks, or any other explanations.
 
 User Input: {user_input}"""
