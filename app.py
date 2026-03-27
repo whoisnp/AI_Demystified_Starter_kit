@@ -57,6 +57,15 @@ with st.sidebar:
     st.divider()
     st.caption("💡 Tip: Type **'calculate 10 + 25'** to trigger the calculator tool!")
 
+# --------------------------STRICT RAG MODE TOGGLE (DEMO PURPOSES) START-----------------------------
+    st.divider()
+    st.session_state.strict_rag_mode = st.toggle(
+        "🔒 Strict RAG Mode (Demo)",
+        value=False,
+        help="When enabled, the agent will only use the RAG system and will not fallback to general knowledge.",
+    )
+# --------------------------STRICT RAG MODE TOGGLE (DEMO PURPOSES) END-----------------------------
+
 # ── Main Chat Interface ───────────────────────────────────────────────────────
 st.title("🤖 AI Demystified")
 st.caption("A simple AI assistant powered by OpenAI or Groq — your choice.")
@@ -92,7 +101,8 @@ if user_input:
     # 2. Get the agent's response
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            response = run_agent(user_input)
+            strict_mode = st.session_state.get("strict_rag_mode", False)
+            response = run_agent(user_input, strict_rag=strict_mode)
         st.markdown(response)
 
     # 3. Save the assistant's response to history

@@ -5,6 +5,7 @@ Exports the available tools for the executor.
 """
 
 from tools.calculator import CalculatorTool
+from tools.rag_search import RagSearchTool
 from tools.search import SearchTool
 from tools.summarizer import SummarizerTool
 
@@ -13,4 +14,5 @@ AVAILABLE_TOOLS = {
     CalculatorTool.name: CalculatorTool(),
     SummarizerTool.name: SummarizerTool(),
     SearchTool.name: SearchTool(),
+    RagSearchTool.name: RagSearchTool(),
 }
