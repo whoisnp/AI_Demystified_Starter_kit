@@ -32,6 +32,8 @@ def route(user_input: str) -> tuple[str | None, str | None]:
 
 Available Tools:
 1. "calculator": Use this for mathematical calculations.
+2. "summarizer": Use this for summarizing given text or articles.
+3. "search": Use this for searching the web for latest information, news, or world knowledge not covered by rag_search.
 
 Output your reply as a strictly valid JSON object with the following structure:
 {{
@@ -40,9 +42,10 @@ Output your reply as a strictly valid JSON object with the following structure:
 }}
 
 Rules:
-- If a tool is needed, "tool" should be exactly one of: "calculator".
+- If a tool is needed, "tool" should be exactly one of: "calculator", "summarizer", "search".
 - If no tool is appropriate, set "tool" to null and "payload" to null.
-- For "calculator", the "payload" should be the specific part of the user input that needs calculating.
+- For "calculator" and "summarizer", the "payload" should be the specific part of the user input that needs processing.
+- For "search", the "payload" should be the query string to search for.
 - Return ONLY the raw JSON object. Do not include markdown formatting, backticks, or any other explanations.
 
 User Input: {user_input}"""
