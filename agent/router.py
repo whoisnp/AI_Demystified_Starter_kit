@@ -3,29 +3,19 @@ agent/router.py
 
 Tool Router
 ───────────
-The router evaluates the user's message to decide if a tool should handle it.
-
-Current behavior:
-  Instead of executing the tool, it simply returns a tuple:
-    (tool_name: str, payload: str)
-  If no tool matches, it returns (None, None).
 """
 
 import json
+from typing import Tuple, Optional
 from agent.llm import get_llm_response
 
 
-def route(user_input: str) -> tuple[str | None, str | None]:
+def route(user_input: str) -> Tuple[Optional[str], Optional[str]]:
     """
     Check if the user's message matches a known tool trigger using an LLM.
 
-    Args:
-        user_input: The raw message from the user.
-
     Returns:
-        A tuple of (tool_name, payload).
-        e.g., ("calculator", "10 + 25")
-        If no tool matches, returns (None, None).
+        (tool_name, payload) or (None, None)
     """
 
     prompt = f"""You are an intelligent routing assistant. Your job is to classify the user's input and decide if a specific tool should handle it.
@@ -43,15 +33,16 @@ Rules:
 - If a tool is needed, "tool" should be exactly one of: "calculator".
 - If no tool is appropriate, set "tool" to null and "payload" to null.
 - For "calculator", the "payload" should be the specific part of the user input that needs calculating.
-- Return ONLY the raw JSON object. Do not include markdown formatting, backticks, or any other explanations.
+- Return ONLY the raw JSON object.
 
 User Input: {user_input}"""
 
     try:
         response = get_llm_response(prompt)
 
-        # Clean up potential markdown formatting from the response
+        # Clean markdown formatting if present
         cleaned_response = response.strip()
+
         if cleaned_response.startswith("```json"):
             cleaned_response = cleaned_response[7:]
         elif cleaned_response.startswith("```"):
@@ -67,26 +58,23 @@ User Input: {user_input}"""
         tool_name = data.get("tool")
         payload = data.get("payload")
 
-        # Handle string "null" just in case the LLM outputs it natively instead of actual null
+        # Handle "null" string cases
         if tool_name == "null":
             tool_name = None
         if payload == "null":
             payload = None
 
         if tool_name is not None:
-            print(
-                f"🔀 [ROUTER] LLM Match found -> Tool: '{tool_name}', Payload: '{payload}'"
-            )
+            print(f"🔀 [ROUTER] Tool: {tool_name}, Payload: {payload}")
         else:
-            print("🔀 [ROUTER] LLM did not match any specific tool.")
+            print("🔀 [ROUTER] No tool matched.")
 
         return tool_name, payload
 
     except json.JSONDecodeError as e:
-        print(
-            f"🔀 [ROUTER] Error parsing LLM JSON: {e} - Response was: {cleaned_response}"
-        )
+        print(f"🔀 [ROUTER] JSON Error: {e} | Response: {cleaned_response}")
         return None, None
+
     except Exception as e:
-        print(f"🔀 [ROUTER] Error during LLM routing: {e}")
+        print(f"🔀 [ROUTER] General Error: {e}")
         return None, None
