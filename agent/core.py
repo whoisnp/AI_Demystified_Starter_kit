@@ -19,7 +19,7 @@ from agent.router import route
 from agent.llm import get_llm_response
 
 
-def run_agent(user_input: str) -> str:
+def run_agent(user_input: str, strict_rag: bool = False) -> str:
     """
     Process a user message and return an appropriate response.
 
@@ -28,6 +28,7 @@ def run_agent(user_input: str) -> str:
 
     Args:
         user_input: The raw message typed by the user.
+        strict_rag: If True, enforce strict handling for RAG search results.
 
     Returns:
         A response string — either from a tool or from the LLM.
@@ -36,7 +37,10 @@ def run_agent(user_input: str) -> str:
         return "Please enter a message to get started!"
 
     # Step 1: Try routing to a specific tool
-    tool_name, payload = route(user_input)
+    if strict_rag:
+        tool_name, payload = "rag_search", user_input
+    else:
+        tool_name, payload = route(user_input)
 
     # Step 2: Execute tool if matched
     if tool_name is not None and payload is not None:
@@ -109,9 +113,49 @@ Query: {query}"""
             )
             return f"Weather:\n{weather}\n\nBudget:\n{budget_result}\n\nItinerary:\n{itinerary}"
         # ------------logic to execute the trip_planner Ends------------
-        return execute_tool(tool_name, payload)
+        tool_output = execute_tool(tool_name, payload)
 
+        # ------------Special handling for RAG search results to demonstrate strict vs loose RAG prompting START----------------
+        print("🚀 [CORE] Step 2: Executing matched single tool...")
+        # Special strict handling for RAG search
+        if tool_name == "rag_search":
+            if strict_rag:
+                if tool_output == "NO_CONTEXT":
+                    return "I don't have enough information to answer that."
+
+                # Strict prompt
+                prompt = (
+                    "You are a strict RAG assistant. Answer the user's query ONLY using the provided Context.\n"
+                    "If the Context answers the Query, provide the answer.\n"
+                    "If the Context does NOT answer the Query, you MUST reply EXACTLY with this sentence and nothing else: "
+                    "'I don't have enough information to answer that. Please ask about the AI Starter Kit, RAG, Pinecone, or the instructor.'\n"
+                    "Do not use any external knowledge.\n\n"
+                    f"Context:\n{tool_output}\n\n"
+                    f"Query:\n{user_input}"
+                )
+                try:
+                    return get_llm_response(prompt)
+                except Exception as e:
+                    return f"⚠️ Something went wrong while contacting the LLM: {str(e)}"
+            else:
+                # Normal (loose) prompt
+                prompt = (
+                    "You retrieved some context from our database. Use it if relevant.\n"
+                    "If it does not contain the answer, you can use your general knowledge to answer the user.\n\n"
+                    f"Context:\n{tool_output}\n\n"
+                    f"Query:\n{user_input}"
+                )
+                try:
+                    return get_llm_response(prompt)
+                except Exception as e:
+                    return f"⚠️ Something went wrong while contacting the LLM: {str(e)}"
+                
+# ------------Special handling for RAG search results to demonstrate strict vs loose RAG prompting END----------------
+
+        return tool_output
     # Last Step: No tool matched — send to the LLM for a general response
+    if strict_rag:
+        return "I am in Strict RAG Mode and can only answer questions based on the provided documents. Please ask a factual question."
     try:
         return get_llm_response(user_input)
     except Exception as e:
